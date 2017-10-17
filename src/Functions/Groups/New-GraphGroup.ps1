@@ -54,11 +54,16 @@
 
     $group = Invoke-MSGraphRequest -Uri $uri -Method Post -Body $body
 
-    Write-Verbose "New group created with Id $($group.id)"
+    if ($group -ne $null)
+    {
+        Write-Verbose "New group created with Id $($group.id)"
 
-    $OwnerIds | New-GraphGroupOwner -GroupId $group.id
+        #$OwnerIds | New-GraphGroupOwner -GroupId $group.id
 
-    $MemberIds | New-GraphGroupMember -GroupId $group.id
+        $MemberIds | New-GraphGroupMember -GroupId $group.id
 
+        # see https://stackoverflow.com/questions/46467617/create-a-group-in-microsoft-graph-api-with-a-owner
+    }
+    
     return $group
 }
