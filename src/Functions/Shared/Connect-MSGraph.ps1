@@ -45,65 +45,81 @@
 
     Write-Verbose "Authority set to $authority"
 
-    switch ($PsCmdlet.ParameterSetName)
-    {
-        "Daemon" {
+    # try {
 
-            #https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-v2-protocols-oauth-client-creds
+        switch ($PsCmdlet.ParameterSetName)
+        {
+            "Daemon" {
 
-            $defaultScope = "https://graph.microsoft.com/.default"
+                #https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-v2-protocols-oauth-client-creds
 
-            $path = "$PSScriptRoot\..\..\Libraries\Microsoft.Identity.Client\Microsoft.Identity.Client.dll"
+                $defaultScope = "https://graph.microsoft.com/.default"
 
-            Write-Verbose "Loading Microsoft.Identity.Client library from $path"
+                $path = "$PSScriptRoot\..\..\Libraries\Microsoft.Identity.Client\Microsoft.Identity.Client.dll"
 
-            [System.Reflection.Assembly]::LoadFrom($path) | Out-Null
+                Write-Verbose "Loading Microsoft.Identity.Client library from $path"
 
-            $clientCredential = New-Object Microsoft.Identity.Client.ClientCredential -ArgumentList $appSecret
-            $clientApplication  = New-Object Microsoft.Identity.Client.ConfidentialClientApplication -ArgumentList $AppId, $authority, $RedirectUrl, $clientCredential, $null, $null
+                [System.Reflection.Assembly]::LoadFrom($path) | Out-Null
 
-            $scopesList = New-Object Collections.Generic.List[string]
-            $scopesList.Add("https://graph.microsoft.com/.default")
+                $clientCredential = New-Object Microsoft.Identity.Client.ClientCredential -ArgumentList $appSecret
+                $clientApplication  = New-Object Microsoft.Identity.Client.ConfidentialClientApplication -ArgumentList $AppId, $authority, $RedirectUrl, $clientCredential, $null, $null
 
-            Write-Verbose "Aquiring Token - Client Credentials Grant Flow"
+                $scopesList = New-Object Collections.Generic.List[string]
+                $scopesList.Add("https://graph.microsoft.com/.default")
 
-            $authenticationResult = $clientApplication.AcquireTokenForClientAsync($scopesList).Result
+                Write-Verbose "Aquiring Token - Client Credentials Grant Flow"
 
-            $token = @{
-                "TokenType" = "Client Credentials"
-                "AccessToken" = $authenticationResult.AccessToken
-                "ExpiresOn" = $authenticationResult.ExpiresOn
-                "RefreshToken" = $null
+                $authenticationResult = $clientApplication.AcquireTokenForClientAsync($scopesList).Result
+
+                $token = @{
+                    "TokenType" = "Client Credentials"
+                    "AccessToken" = $authenticationResult.AccessToken
+                    "ExpiresOn" = $authenticationResult.ExpiresOn
+                    "RefreshToken" = $null
+                }
+
             }
 
-        }
+            "UserPassword" {
+            
+                $resource = "https://graph.microsoft.com"
+                $tokenEndpointUri = "$authority/v2.0/authorize" # "$authority/oauth2/v2.0/token" # # "$authority/oauth2/token"
+                $tokenEndpointUri = "https://login.microsoftonline.com/$AzureADDomain/oauth2/token"
+                $body = "grant_type=password&username=$UserName&password=$Password&client_id=$AppId&client_secret=$appSecret&resource=$resource";
 
-        "UserPassword" {
-          
-            #based on http://johnliu.net/blog/2017/1/create-many-o365-groups-with-powershell-resource-owner-granttype-and-microsoft-graph
-            $resource = "https://graph.microsoft.com"
-            $tokenEndpointUri = "$authority/v2.0/authorize" # "$authority/oauth2/v2.0/token" # # "$authority/oauth2/token"
-            $tokenEndpointUri = "https://login.microsoftonline.com/$AzureADDomain/oauth2/token"
-            $body = "grant_type=password&username=$UserName&password=$Password&client_id=$AppId&client_secret=$appSecret&resource=$resource";
+                Write-Verbose "Aquiring Token - Password Grant"
 
-            Write-Verbose "Aquiring Token - Password Grant"
+                $response = Invoke-WebRequest -Uri $tokenEndpointUri -Body $body -Method Post -UseBasicParsing
+                $responseBody = $response.Content | ConvertFrom-JSON
 
-            $response = Invoke-WebRequest -Uri $tokenEndpointUri -Body $body -Method Post -UseBasicParsing
-            $responseBody = $response.Content | ConvertFrom-JSON
+                $token = @{
+                    "TokenType" = "Password"
+                    "AccessToken" = $responseBody.access_token
+                    "ExpiresOn" = $responseBody.expires_on #TODO: Convert this nicely
+                    "RefreshToken" = $null
+                }
 
-            $token = @{
-                "TokenType" = "Password"
-                "AccessToken" = $responseBody.access_token
-                "ExpiresOn" = $responseBody.expires_on #TODO: Convert this nicely
-                "RefreshToken" = $null
+                Write-Verbose "Scopes received: $($responseBody.scope)"
+
             }
-
-            Write-Verbose "Scopes received: $($responseBody.scope)"
-
         }
-    }
 
-    Write-Verbose "Token retrieved, expires on $($token.ExpiresOn)"
+        Write-Verbose "Token retrieved, expires on $($token.ExpiresOn)"
 
-    $global:PowerGraph_AccessToken = $token
+        $global:PowerGraph_AccessToken = $token
+
+    # }
+    # catch {
+    #     $responseStream = $_.Exception.Response.GetResponseStream()
+    #     $streamReader = New-Object System.IO.StreamReader $responseStream
+    #     $responseBody = $streamReader.ReadToEnd()
+
+    #     if ($_.Exception.Response.StatusCode -eq "Bad Request") # 400
+    #         { $hint = " [Hint: The request you are making might not be possible using the authentication model you've selected. Review the api reference for the command you're trying to execute at https://developer.microsoft.com/en-us/graph/docs/api-reference and verify that the permission does not say 'Not supported.'. If it does, you might need to call Connect-MSGraph with a username and password first instead.] " }
+
+    #     if ($_.Exception.Response.StatusCode -eq "Forbidden") # 403
+    #         { $hint = " [Hint: You might need to get an updated Admin consent if you've recently changed the application's permissions. ] " }
+
+    #     Write-Error ($_.Exception.Message + $hint + " " + $responseBody)
+    # }
 }
