@@ -44,7 +44,7 @@
 
     try {
 
-        $Result = Invoke-WebRequest @Params -ErrorAction Ignore
+        $Result = Invoke-WebRequest @Params -UseBasicParsing -ErrorAction Ignore
 
         Write-Verbose "Graph Response: $($Result.Content)"
 
@@ -54,15 +54,19 @@
 
     }
     catch {
-        $responseStream = $_.Exception.Response.GetResponseStream()
-        $streamReader = New-Object System.IO.StreamReader $responseStream
-        $responseBody = $streamReader.ReadToEnd()
+        if ($_.Exception.Response -ne $null)
+        {
+            $responseStream = $_.Exception.Response.GetResponseStream()
+            $streamReader = New-Object System.IO.StreamReader $responseStream
+            $responseBody = $streamReader.ReadToEnd()
 
-        if ($_.Exception.Response.StatusCode -eq "Unauthorized") # 401
-            { $hint = " [Hint: The request you are making might not be possible using the authentication model you've selected. Review the api reference for the command you're trying to execute at https://developer.microsoft.com/en-us/graph/docs/api-reference and verify that the permission does not say 'Not supported.'. If it does, you might need to call Connect-MSGraph with a username and password first instead.] " }
+            if ($_.Exception.Response.StatusCode -eq "Unauthorized") # 401
+                { $hint = " [Hint: The request you are making might not be possible using the authentication model you've selected. Review the api reference for the command you're trying to execute at https://developer.microsoft.com/en-us/graph/docs/api-reference and verify that the permission does not say 'Not supported.'. If it does, you might need to call Connect-MSGraph with a username and password first instead.] " }
 
-        if ($_.Exception.Response.StatusCode -eq "Forbidden") # 403
-            { $hint = " [Hint: You might need to get an updated Admin consent if you've recently changed the application's permissions. ] " }
+            if ($_.Exception.Response.StatusCode -eq "Forbidden") # 403
+                { $hint = " [Hint: You might need to get an updated Admin consent if you've recently changed the application's permissions. ] " }
+        } else
+            { $responseBody = "" }
 
         Write-Error ($_.Exception.Message + $hint + " " + $responseBody)
     }
