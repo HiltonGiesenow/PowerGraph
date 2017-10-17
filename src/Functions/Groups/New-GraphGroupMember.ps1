@@ -25,7 +25,7 @@
 
             $uri = $global:PowerGraph_BaseUrl + "groups/$GroupId/members/`$ref"
 
-            Write-Verbose "Adding member with Id $singleMemberId to group with Id $GroupId"
+            Write-Verbose "Adding member with Id $singleMemberId to group with Id $GroupId ($($body | ConvertTo-Json))"
 
             Invoke-MSGraphRequest -Uri $uri -Method Post -Body ($body | ConvertTo-Json)
         }
