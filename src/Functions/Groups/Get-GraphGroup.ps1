@@ -9,17 +9,20 @@
         [string[]]$GroupId = @()
     )
 
-    foreach ($singleGroupId in $GroupId)
+    Process
     {
-        $emptyGuid = [guid]::Empty
-        if ([guid]::TryParse($singleGroupId, [ref]$emptyGuid))
+        foreach ($singleGroupId in $GroupId)
         {
-            $uri = $global:PowerGraph_BaseUrl + "groups/$singleGroupId"
-            return Invoke-MSGraphRequest -Uri $uri
-        }
-        else
-        {
-            throw "Invalid Group ID - $singleGroupId"
+            $emptyGuid = [guid]::Empty
+            if ([guid]::TryParse($singleGroupId, [ref]$emptyGuid))
+            {
+                $uri = $global:PowerGraph_BaseUrl + "groups/$singleGroupId"
+                return Invoke-MSGraphRequest -Uri $uri
+            }
+            else
+            {
+                throw "Invalid Group ID - $singleGroupId"
+            }
         }
     }
 }
