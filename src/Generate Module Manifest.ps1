@@ -23,8 +23,9 @@ $tags = @(
     'OneDrive',
     'Teams',
     'SharePoint',
-    'Online'
-    'SharePointOnline'
+    'Online',
+    'SharePointOnline',
+    'PowerGraph'
 )
 
 New-ModuleManifest -Path $manifestPath -ModuleVersion $version -RootModule "PowerGraph365.psm1" -Guid '3d4fe3d7-46d7-418f-8979-1f7b36b3dd35' -Author "Hilton Giesenow" -CompanyName "Experts Inside" -FunctionsToExport '*' -Copyright "2019 Hilton Giesenow, All Rights Reserved" -ProjectUri "https://github.com/HiltonGiesenow/PowerGraph" -LicenseUri "https://github.com/HiltonGiesenow/PowerGraph/blob/master/LICENSE" -Description $description -Tags $tags -ReleaseNotes $releaseNotes -Verbose
