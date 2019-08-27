@@ -1,11 +1,15 @@
-﻿$version = "0.0.1"
+﻿$version = "0.0.2"
 $manifestPath = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) -ChildPath "\PowerGraph365.psd1"
 
 Remove-Item -Path $manifestPath -ErrorAction SilentlyContinue
 
 $description = "PowerGraph 365 is a PowerShell library for interacting with the Microsoft Graph"
 
-$releaseNotes = "0.0.1
+$releaseNotes = "
+0.0.2
+* Updating to latest version of MSAL for Daemon login
+
+0.0.1
 * Initial release.
 "
 
