@@ -23,3 +23,5 @@
     return $return.value
 
 }
+
+#reference: https://docs.microsoft.com/en-gb/graph/api/user-list-joinedteams?view=graph-rest-1.0&tabs=http

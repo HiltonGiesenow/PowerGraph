@@ -45,6 +45,8 @@
 
     Write-Verbose "Authority set to $authority"
 
+#consent: https://login.microsoftonline.com/Enter_the_Tenant_Id_Here/adminconsent?client_id=Enter_the_Application_Id_Here
+
     # try {
 
         switch ($PsCmdlet.ParameterSetName)
@@ -55,21 +57,24 @@
 
                 $defaultScope = "https://graph.microsoft.com/.default"
 
-                $path = "$PSScriptRoot\..\..\Libraries\Microsoft.Identity.Client\Microsoft.Identity.Client.dll"
+                $path = "$PSScriptRoot\..\..\Libraries\Microsoft.Identity.Client\4.3.0\Microsoft.Identity.Client.dll"
 
                 Write-Verbose "Loading Microsoft.Identity.Client library from $path"
 
                 [System.Reflection.Assembly]::LoadFrom($path) | Out-Null
 
-                $clientCredential = New-Object Microsoft.Identity.Client.ClientCredential -ArgumentList $appSecret
-                $clientApplication  = New-Object Microsoft.Identity.Client.ConfidentialClientApplication -ArgumentList $AppId, $authority, $RedirectUrl, $clientCredential, $null, $null
+                # legacy library
+                # $clientCredential = New-Object Microsoft.Identity.Client.ClientCredential -ArgumentList $appSecret
+                # $clientApplication  = New-Object Microsoft.Identity.Client.ConfidentialClientApplication -ArgumentList $AppId, $authority, $RedirectUrl, $clientCredential, $null, $null
+
+                $clientApplication  = [Microsoft.Identity.Client.ConfidentialClientApplicationBuilder]::Create($AppId).WithClientSecret($AppSecret).WithAuthority([Uri]::new($authority)).Build()
 
                 $scopesList = New-Object Collections.Generic.List[string]
                 $scopesList.Add("https://graph.microsoft.com/.default")
 
                 Write-Verbose "Aquiring Token - Client Credentials Grant Flow"
 
-                $authenticationResult = $clientApplication.AcquireTokenForClientAsync($scopesList).Result
+                $authenticationResult = $clientApplication.AcquireTokenForClient($scopesList).ExecuteAsync().Result
 
                 $token = @{
                     "TokenType" = "Client Credentials"
